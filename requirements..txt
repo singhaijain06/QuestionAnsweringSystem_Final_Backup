@@ -8,3 +8,4 @@ pdf2image
 Pillow
 reportlab
 python-docx
+gunicorn

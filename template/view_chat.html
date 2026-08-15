@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Previous Chat</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+
+    <div class="header">
+
+        <div>
+
+            <h2>🤖 AI Question Answering System</h2>
+
+            <p>
+                Welcome, <b>{{ username }}</b>
+            </p>
+
+        </div>
+
+        <div>
+
+            <a href="/chat">
+                <button class="new-btn">
+                    ➕ New Chat
+                </button>
+            </a>
+
+            <a href="/history">
+                <button>
+                    📜 History
+                </button>
+            </a>
+
+            <a href="/logout">
+                <button class="logout-btn">
+                    Logout
+                </button>
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- QUESTION -->
+
+    <div class="user-message">
+
+        <h4>👤 You</h4>
+
+        <p>
+            {{ question }}
+        </p>
+
+    </div>
+
+
+    <!-- ANSWER -->
+
+    <div class="ai-message">
+
+        <h4>🤖 AI Assistant</h4>
+
+        <div id="aiAnswer">
+
+            {{ answer }}
+
+        </div>
+
+    </div>
+
+
+    <!-- DATE -->
+
+    <div class="chat-date">
+
+        🕒 {{ created_at }}
+
+    </div>
+
+
+    <!-- BUTTONS -->
+
+    <div style="margin-top:20px;">
+
+    <a href="/history">
+        <button>
+            ← Back to History
+        </button>
+    </a>
+
+    <a href="/chat">
+        <button class="new-btn">
+            💬 Ask New Question
+        </button>
+    </a>
+
+    <a href="/download/{{ request.view_args.chat_id }}">
+        <button>
+            📄 Download PDF
+        </button>
+    </a>
+
+</div>
+
+</div>
+
+</body>
+
+</html>

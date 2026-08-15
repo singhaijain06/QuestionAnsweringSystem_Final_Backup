@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <script>
+        (function() {
+            var theme = localStorage.getItem("askai-theme") || "dark";
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>AskAI - AI Assistant</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <link rel="manifest"
+          href="{{ url_for('static', filename='manifest.json') }}">
+
+    <link rel="icon"
+          href="{{ url_for('static', filename='icons/icon-192.png') }}">
+
+    <link rel="apple-touch-icon"
+          href="{{ url_for('static', filename='icons/icon-192.png') }}">
+
+    <meta name="theme-color" content="#11131a">
+
+    <script src="{{ url_for('static', filename='pwa.js') }}" defer></script>
+</head>
+
+<body>
+
+<div class="app-container">
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">🤖</div>
+
+            <div>
+                <h1>AskAI</h1>
+                <span>AI Assistant</span>
+            </div>
+        </div>
+
+
+        <a href="/chat" class="new-chat">
+            <span>＋</span>
+            New Chat
+        </a>
+
+
+        <nav class="navigation">
+
+            <a href="/dashboard" class="nav-item">
+                <span>📊</span>
+                Dashboard
+            </a>
+
+            <a href="/chat" class="nav-item active">
+                <span>💬</span>
+                Chat
+            </a>
+
+            <a href="/history" class="nav-item">
+                <span>📜</span>
+                History
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <div class="user-profile">
+
+                <div class="avatar">
+                    {{ username[0]|upper }}
+                </div>
+
+                <div class="user-info">
+                    <strong>{{ username }}</strong>
+                    <small>Active User</small>
+                </div>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="theme-toggle"
+                id="themeToggleBtn"
+                onclick="toggleTheme()">
+
+                <span id="themeIcon">🌙</span>
+                <span id="themeLabel">Dark Mode</span>
+
+            </button>
+
+
+            <a href="/logout" class="logout">
+                🚪 Logout
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <!-- ================= MAIN ================= -->
+
+    <main class="main-content">
+
+
+        <!-- HEADER -->
+
+        <header class="top-header">
+
+            <div>
+                <h2>AI Assistant</h2>
+
+                <p>
+                    Ask questions, upload PDFs and get intelligent answers.
+                </p>
+            </div>
+
+
+            <div class="online-status">
+                <span class="online-dot"></span>
+                Online
+            </div>
+
+        </header>
+
+
+        <!-- ================= CHAT ================= -->
+
+        <section class="chat-area">
+
+
+            <!-- FLASH MESSAGES -->
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+
+                {% if messages %}
+
+                    <div class="flash-container">
+
+                        {% for category, message in messages %}
+
+                            <div class="flash-message {{ category }}">
+                                {{ message }}
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                {% endif %}
+
+            {% endwith %}
+
+
+            <!-- WELCOME -->
+
+            {% if not answer %}
+
+            <div class="welcome">
+
+                <div class="welcome-icon">
+                    🤖
+                </div>
+
+                <h1>
+                    How can I help you?
+                </h1>
+
+                <p>
+                    Ask me anything or upload a PDF
+                    to ask questions from it.
+                </p>
+
+
+                <div class="suggestions">
+
+                    <button onclick="setQuestion('What is Artificial Intelligence?')">
+                        🤖 What is AI?
+                    </button>
+
+                    <button onclick="setQuestion('Explain Machine Learning')">
+                        🧠 Machine Learning
+                    </button>
+
+                    <button onclick="setQuestion('What is Python?')">
+                        🐍 Python
+                    </button>
+
+                    <button onclick="setQuestion('Explain DBMS')">
+                        🗄️ DBMS
+                    </button>
+
+                </div>
+
+            </div>
+
+            {% endif %}
+
+
+            <!-- ================= ANSWER ================= -->
+
+            {% if answer %}
+
+            <div class="conversation">
+
+
+                <!-- USER -->
+
+                <div class="message user-message">
+
+                    <div class="message-avatar">
+                        👤
+                    </div>
+
+                    <div class="message-content">
+
+                        <div class="message-name">
+                            You
+                        </div>
+
+                        <div class="user-question">
+                            {{ question }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- AI -->
+
+                <div class="message ai-message">
+
+                    <div class="message-avatar">
+                        🤖
+                    </div>
+
+                    <div class="message-content">
+
+                        <div class="message-header">
+
+                            <div class="message-name">
+                                AI Assistant
+                            </div>
+
+                            <div class="answer-actions">
+
+                                <button
+                                    class="copy-button"
+                                    onclick="copyAnswer(this)">
+
+                                    📋 Copy Answer
+
+                                </button>
+
+
+                                <button
+                                    class="copy-button"
+                                    id="speakButton"
+                                    onclick="toggleSpeak(this)">
+
+                                    🔊 Read Aloud
+
+                                </button>
+
+
+                                {% if last_chat_id %}
+
+                                <form
+                                    method="POST"
+                                    action="/rate_chat/{{ last_chat_id }}/1"
+                                    class="rate-form">
+
+                                    <button
+                                        type="submit"
+                                        class="rate-button {{ 'rate-active-up' if last_chat_rating == 1 else '' }}"
+                                        title="Good answer">
+
+                                        👍
+
+                                    </button>
+
+                                </form>
+
+
+                                <form
+                                    method="POST"
+                                    action="/rate_chat/{{ last_chat_id }}/-1"
+                                    class="rate-form">
+
+                                    <button
+                                        type="submit"
+                                        class="rate-button {{ 'rate-active-down' if last_chat_rating == -1 else '' }}"
+                                        title="Bad answer">
+
+                                        👎
+
+                                    </button>
+
+                                </form>
+
+
+                                <a
+                                    href="/export_chat/{{ last_chat_id }}/pdf"
+                                    class="copy-button">
+
+                                    📄 Export PDF
+
+                                </a>
+
+
+                                <a
+                                    href="/export_chat/{{ last_chat_id }}/docx"
+                                    class="copy-button">
+
+                                    📝 Export Word
+
+                                </a>
+
+
+                                <form
+                                    method="POST"
+                                    action="/share_chat/{{ last_chat_id }}"
+                                    class="rate-form">
+
+                                    <button
+                                        type="submit"
+                                        class="copy-button">
+
+                                        🔗 {{ 'Copy Share Link' if last_chat_share_id else 'Share' }}
+
+                                    </button>
+
+                                </form>
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+
+                        {% if last_image_file %}
+
+                        <div class="chat-image-attachment">
+
+                            <img
+                                src="/uploads/{{ last_image_file }}"
+                                alt="Attached image">
+
+                        </div>
+
+                        {% endif %}
+
+
+                        <div class="answer-content"
+                             id="answerContent">
+
+                            {{ answer|safe }}
+
+                        </div>
+
+
+                        {% if follow_up_questions %}
+
+                        <div class="follow-up-suggestions">
+
+                            <small>
+                                💡 You might also ask:
+                            </small>
+
+                            <div class="follow-up-chips">
+
+                                {% for suggestion in follow_up_questions %}
+
+                                <button
+                                    type="button"
+                                    class="follow-up-chip"
+                                    onclick="setQuestion('{{ suggestion|replace("'", "\\'") }}')">
+
+                                    {{ suggestion }}
+
+                                </button>
+
+                                {% endfor %}
+
+                            </div>
+
+                        </div>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            {% endif %}
+
+
+            <!-- ================= PDF ================= -->
+
+            <div class="pdf-upload">
+
+                <div class="pdf-heading">
+
+                    <div class="pdf-icon">
+                        📄
+                    </div>
+
+                    <div>
+                        <h3>Ask Questions From PDF</h3>
+
+                        <p>
+                            Upload a PDF and ask questions about its content.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <form
+                    method="POST"
+                    action="/upload_pdf"
+                    enctype="multipart/form-data"
+                    class="pdf-form"
+                    id="pdfForm">
+
+
+                    <input
+                        type="file"
+                        name="pdf"
+                        id="pdfInput"
+                        accept=".pdf"
+                        required>
+
+
+                    <button
+                        type="submit"
+                        class="upload-button"
+                        id="uploadButton">
+
+                        📤 Upload PDF
+
+                    </button>
+
+                </form>
+
+
+                {% if pdfs %}
+
+                <div class="pdf-list">
+
+                    {% for pdf in pdfs %}
+
+                    <div class="pdf-status {{ 'pdf-active' if pdf.id == active_pdf_id else '' }}">
+
+                        <div>
+
+                            <span class="pdf-status-icon">
+                                📚
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    {{ pdf.pdf_name }}
+                                </strong>
+
+                                <small>
+                                    {% if pdf.id == active_pdf_id %}
+                                        ✅ Currently active
+                                    {% else %}
+                                        Tap "Use" to chat with this PDF
+                                    {% endif %}
+                                </small>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="pdf-actions">
+
+                            {% if pdf.id != active_pdf_id %}
+
+                            <form
+                                method="POST"
+                                action="/select_pdf/{{ pdf.id }}">
+
+                                <button
+                                    type="submit"
+                                    class="use-pdf">
+
+                                    ▶️ Use
+
+                                </button>
+
+                            </form>
+
+                            {% endif %}
+
+
+                            <form
+                                method="POST"
+                                action="/remove_pdf/{{ pdf.id }}"
+                                onsubmit="return confirm('Remove this PDF?');">
+
+                                <button
+                                    type="submit"
+                                    class="remove-pdf">
+
+                                    🗑️ Remove
+
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- ================= INPUT ================= -->
+
+            <div class="input-area">
+
+                <div
+                    class="image-preview-chip"
+                    id="imagePreviewChip">
+
+                    <img id="imagePreviewThumb" src="" alt="attached image">
+
+                    <span id="imagePreviewName"></span>
+
+                    <button
+                        type="button"
+                        id="removeImageButton"
+                        title="Remove attached image">
+
+                        ✖
+
+                    </button>
+
+                </div>
+
+
+                <form
+                    method="POST"
+                    action="/chat"
+                    enctype="multipart/form-data"
+                    class="chat-form"
+                    id="chatForm">
+
+
+                    <input
+                        type="file"
+                        name="image"
+                        id="imageInput"
+                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                        style="display:none;">
+
+
+                    <button
+                        type="button"
+                        id="attachButton"
+                        title="Attach an image">
+
+                        📎
+
+                    </button>
+
+
+                    <input
+                        type="text"
+                        name="question"
+                        id="questionInput"
+                        value="{{ question or '' }}"
+                        placeholder="Message AskAI..."
+                        autocomplete="off">
+
+
+                    <button
+                        type="button"
+                        id="micButton"
+                        title="Ask by voice">
+
+                        🎤
+
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        id="sendButton">
+
+                        ➤
+
+                    </button>
+
+                </form>
+
+
+                <label class="followup-toggle">
+
+                    <input
+                        type="checkbox"
+                        name="enable_followups"
+                        id="enableFollowups"
+                        form="chatForm">
+
+                    💡 Suggest follow-up questions (slower)
+
+                </label>
+
+
+                <div
+                    class="loading-message"
+                    id="loadingMessage">
+
+                    <span class="loading-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </span>
+
+                    AskAI is thinking...
+
+                </div>
+
+
+                <div
+                    class="voice-status"
+                    id="voiceStatus">
+
+                    🎙️ Listening... speak now
+
+                </div>
+
+
+                <p class="disclaimer">
+
+                    AskAI can make mistakes.
+                    Verify important information.
+
+                </p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- ================= JAVASCRIPT ================= -->
+
+<script>
+
+/* =========================================================
+   THEME TOGGLE
+   ========================================================= */
+
+function applyThemeButtonLabel() {
+
+    const theme =
+        document.documentElement.getAttribute("data-theme") || "dark";
+
+    const icon = document.getElementById("themeIcon");
+    const label = document.getElementById("themeLabel");
+
+    if (!icon || !label) {
+        return;
+    }
+
+    if (theme === "light") {
+        icon.textContent = "☀️";
+        label.textContent = "Light Mode";
+    } else {
+        icon.textContent = "🌙";
+        label.textContent = "Dark Mode";
+    }
+
+}
+
+
+function toggleTheme() {
+
+    const current =
+        document.documentElement.getAttribute("data-theme") || "dark";
+
+    const next = current === "light" ? "dark" : "light";
+
+    document.documentElement.setAttribute("data-theme", next);
+
+    localStorage.setItem("askai-theme", next);
+
+    applyThemeButtonLabel();
+
+}
+
+
+applyThemeButtonLabel();
+
+
+/* =========================================================
+   FOLLOW-UP TOGGLE (remember user's preference)
+   ========================================================= */
+
+const enableFollowupsCheckbox =
+    document.getElementById("enableFollowups");
+
+if (enableFollowupsCheckbox) {
+
+    enableFollowupsCheckbox.checked =
+        localStorage.getItem("askai-followups") === "on";
+
+    enableFollowupsCheckbox.addEventListener(
+        "change",
+        function() {
+
+            localStorage.setItem(
+                "askai-followups",
+                enableFollowupsCheckbox.checked ? "on" : "off"
+            );
+
+        }
+    );
+
+}
+
+
+function setQuestion(question) {
+
+    const input =
+        document.getElementById("questionInput");
+
+    input.value = question;
+
+    input.focus();
+}
+
+
+/* COPY ANSWER */
+
+function copyAnswer(button) {
+
+    const answer =
+        document.getElementById("answerContent");
+
+    if (!answer) {
+        return;
+    }
+
+
+    navigator.clipboard.writeText(
+        answer.innerText
+    ).then(function() {
+
+        const original =
+            button.innerHTML;
+
+        button.innerHTML =
+            "✅ Copied!";
+
+        setTimeout(function() {
+
+            button.innerHTML =
+                original;
+
+        }, 2000);
+
+    }).catch(function() {
+
+        alert("Unable to copy answer.");
+
+    });
+
+}
+
+
+/* CHAT LOADING */
+
+const chatForm =
+    document.getElementById("chatForm");
+
+const sendButton =
+    document.getElementById("sendButton");
+
+const loadingMessage =
+    document.getElementById("loadingMessage");
+
+
+if (chatForm) {
+
+    chatForm.addEventListener(
+        "submit",
+        function() {
+
+            sendButton.disabled = true;
+
+            sendButton.innerHTML = "⏳";
+
+            loadingMessage.style.display =
+                "flex";
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   IMAGE ATTACH (Chat with an image)
+   ========================================================= */
+
+const attachButton =
+    document.getElementById("attachButton");
+
+const imageInput =
+    document.getElementById("imageInput");
+
+const imagePreviewChip =
+    document.getElementById("imagePreviewChip");
+
+const imagePreviewThumb =
+    document.getElementById("imagePreviewThumb");
+
+const imagePreviewName =
+    document.getElementById("imagePreviewName");
+
+const removeImageButton =
+    document.getElementById("removeImageButton");
+
+const chatFormEl =
+    document.getElementById("chatForm");
+
+const questionInputEl =
+    document.getElementById("questionInput");
+
+
+if (attachButton && imageInput) {
+
+    attachButton.addEventListener(
+        "click",
+        function() {
+
+            imageInput.click();
+
+        }
+    );
+
+
+    imageInput.addEventListener(
+        "change",
+        function() {
+
+            const file = imageInput.files[0];
+
+            if (!file) {
+
+                imagePreviewChip.style.display = "none";
+
+                return;
+            }
+
+
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+
+                imagePreviewThumb.src = e.target.result;
+
+                imagePreviewName.textContent = file.name;
+
+                imagePreviewChip.style.display = "flex";
+
+            };
+
+            reader.readAsDataURL(file);
+
+        }
+    );
+
+}
+
+
+if (removeImageButton) {
+
+    removeImageButton.addEventListener(
+        "click",
+        function() {
+
+            imageInput.value = "";
+
+            imagePreviewChip.style.display = "none";
+
+        }
+    );
+
+}
+
+
+if (chatFormEl) {
+
+    chatFormEl.addEventListener(
+        "submit",
+        function(event) {
+
+            const hasQuestion =
+                questionInputEl.value.trim() !== "";
+
+            const hasImage =
+                imageInput && imageInput.files.length > 0;
+
+            if (!hasQuestion && !hasImage) {
+
+                event.preventDefault();
+
+                alert(
+                    "Please type a question or attach an image."
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   VOICE INPUT (Speech To Text)
+   ========================================================= */
+
+const micButton =
+    document.getElementById("micButton");
+
+const questionInput =
+    document.getElementById("questionInput");
+
+const voiceStatus =
+    document.getElementById("voiceStatus");
+
+const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+let recognition = null;
+
+let isListening = false;
+
+
+if (micButton) {
+
+    if (!SpeechRecognition) {
+
+        /* Browser does not support voice input */
+
+        micButton.disabled = true;
+
+        micButton.title =
+            "Voice input not supported in this browser";
+
+        micButton.style.opacity = "0.4";
+
+    } else {
+
+        recognition = new SpeechRecognition();
+
+        recognition.lang = "en-IN";
+
+        recognition.continuous = false;
+
+        recognition.interimResults = false;
+
+
+        micButton.addEventListener(
+            "click",
+            function() {
+
+                if (isListening) {
+
+                    recognition.stop();
+
+                    return;
+                }
+
+
+                try {
+
+                    recognition.start();
+
+                } catch (e) {
+
+                    console.error(
+                        "Speech recognition start error:",
+                        e
+                    );
+
+                }
+
+            }
+        );
+
+
+        recognition.addEventListener(
+            "start",
+            function() {
+
+                isListening = true;
+
+                micButton.classList.add("mic-active");
+
+                if (voiceStatus) {
+
+                    voiceStatus.style.display = "flex";
+
+                }
+
+            }
+        );
+
+
+        recognition.addEventListener(
+            "end",
+            function() {
+
+                isListening = false;
+
+                micButton.classList.remove("mic-active");
+
+                if (voiceStatus) {
+
+                    voiceStatus.style.display = "none";
+
+                }
+
+            }
+        );
+
+
+        recognition.addEventListener(
+            "result",
+            function(event) {
+
+                const transcript =
+                    event.results[0][0].transcript;
+
+                questionInput.value = transcript;
+
+                questionInput.focus();
+
+            }
+        );
+
+
+        recognition.addEventListener(
+            "error",
+            function(event) {
+
+                console.error(
+                    "Speech recognition error:",
+                    event.error
+                );
+
+                if (voiceStatus) {
+
+                    voiceStatus.style.display = "none";
+
+                }
+
+            }
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   READ AI ANSWER ALOUD (Text To Speech)
+   ========================================================= */
+
+let currentUtterance = null;
+
+
+function toggleSpeak(button) {
+
+    const answerElement =
+        document.getElementById("answerContent");
+
+    if (!answerElement) {
+
+        return;
+    }
+
+
+    if (!("speechSynthesis" in window)) {
+
+        alert("Text-to-speech is not supported in this browser.");
+
+        return;
+    }
+
+
+    /* If already speaking, stop it */
+
+    if (window.speechSynthesis.speaking) {
+
+        window.speechSynthesis.cancel();
+
+        button.innerHTML = "🔊 Read Aloud";
+
+        return;
+    }
+
+
+    const textToSpeak =
+        answerElement.innerText;
+
+    currentUtterance =
+        new SpeechSynthesisUtterance(textToSpeak);
+
+    currentUtterance.rate = 1;
+
+    currentUtterance.pitch = 1;
+
+
+    currentUtterance.onend = function() {
+
+        button.innerHTML = "🔊 Read Aloud";
+
+    };
+
+
+    currentUtterance.onerror = function() {
+
+        button.innerHTML = "🔊 Read Aloud";
+
+    };
+
+
+    button.innerHTML = "⏸️ Stop";
+
+    window.speechSynthesis.speak(currentUtterance);
+
+}
+
+
+/* PDF LOADING */
+
+const pdfForm =
+    document.getElementById("pdfForm");
+
+const uploadButton =
+    document.getElementById("uploadButton");
+
+
+if (pdfForm) {
+
+    pdfForm.addEventListener(
+        "submit",
+        function() {
+
+            uploadButton.disabled = true;
+
+            uploadButton.innerHTML =
+                "⏳ Uploading...";
+
+        }
+    );
+
+}
+
+</script>
+
+</body>
+
+</html>

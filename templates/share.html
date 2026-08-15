@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <script>
+        (function() {
+            var theme = localStorage.getItem("askai-theme") || "dark";
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Shared Answer - AskAI</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+
+        .share-page {
+            max-width: 720px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .share-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: var(--color-text);
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .share-card {
+            background: var(--color-bg-elevated);
+            border: 1px solid var(--color-border2);
+            border-radius: 14px;
+            padding: 22px;
+        }
+
+        .share-question {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--color-text);
+            margin-bottom: 16px;
+        }
+
+        .share-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--color-text-muted);
+            font-size: 13px;
+        }
+
+        .share-footer a {
+            color: var(--color-accent);
+            text-decoration: none;
+        }
+
+        .share-not-found {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-text-secondary);
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="share-page">
+
+        <div class="share-brand">
+            🤖 AskAI
+        </div>
+
+
+        {% if item %}
+
+        <div class="share-card">
+
+            <div class="share-question">
+                ❓ {{ item.question }}
+            </div>
+
+
+            {% if item.image_file %}
+
+            <div class="chat-image-attachment">
+
+                <img
+                    src="/uploads/{{ item.image_file }}"
+                    alt="Attached image">
+
+            </div>
+
+            {% endif %}
+
+
+            <div class="answer-content">
+
+                {{ item.answer|safe }}
+
+            </div>
+
+        </div>
+
+
+        <div class="share-footer">
+
+            Shared via
+            <a href="/">AskAI</a>
+            — an AI Question Answering Assistant
+
+        </div>
+
+        {% else %}
+
+        <div class="share-not-found">
+
+            <h2>
+                🔍 Link not found
+            </h2>
+
+            <p>
+                This shared answer doesn't exist or has been removed.
+            </p>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</body>
+
+</html>

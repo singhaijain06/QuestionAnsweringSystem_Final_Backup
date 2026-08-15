@@ -998,7 +998,10 @@ def guest_bot():
 
             raw_answer = ask_ai(question)
 
-            answer = markdown.markdown(raw_answer)
+            answer = markdown.markdown(
+                raw_answer,
+                extensions=["tables", "fenced_code"]
+            )
 
         else:
 
@@ -1449,7 +1452,8 @@ def chat():
 
 
             answer_html = markdown.markdown(
-                answer
+                answer,
+                extensions=["tables", "fenced_code"]
             )
 
 
@@ -1551,7 +1555,10 @@ def chat():
         "index.html",
         username=session["user"],
         answer=(
-            markdown.markdown(answer)
+            markdown.markdown(
+                answer,
+                extensions=["tables", "fenced_code"]
+            )
             if answer
             else ""
         ),

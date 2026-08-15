@@ -1,0 +1,26 @@
+# Virtual environment (huge, and everyone installs their own)
+.venv/
+venv/
+env/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# PyCharm project settings
+.idea/
+
+# SECRET - your Groq API key. NEVER upload this to GitHub.
+groq_key.txt
+
+# Database - contains real user accounts, passwords, chat history
+database.db
+database/
+
+# User-uploaded files - PDFs, images, extracted text
+uploads/
+upload/
+
+# OS junk files
+.DS_Store
+Thumbs.db

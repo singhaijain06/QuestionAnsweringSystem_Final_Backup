@@ -1,0 +1,10 @@
+Flask
+Werkzeug
+groq
+markdown
+PyPDF2
+pytesseract
+pdf2image
+Pillow
+reportlab
+python-docx
